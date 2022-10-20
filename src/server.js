@@ -4,6 +4,7 @@ import cors from "cors"
 import mongoose from "mongoose"
 import usersRouter from "./api/users/index.js"
 import booksRouter from "./api/books/index.js"
+import authorsRouter from "./api/authors/index.js"
 import {
   badRequestHandler,
   genericErrorHandler,
@@ -20,6 +21,7 @@ server.use(express.json())
 // *************************************** ENDPOINTS ***************************************************
 server.use("/users", usersRouter)
 server.use("/books", booksRouter)
+server.use("/authors", authorsRouter)
 
 // ************************************ ERROR HANDLERS *************************************************
 server.use(badRequestHandler)

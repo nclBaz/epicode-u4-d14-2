@@ -13,6 +13,7 @@ const booksSchema = new Schema(
       enum: ["history", "fantasy", "romance", "horror"],
     },
     img: { type: String, required: true },
+    authors: [{ type: Schema.Types.ObjectId, ref: "Author" }],
   },
   { timestamps: true }
 )

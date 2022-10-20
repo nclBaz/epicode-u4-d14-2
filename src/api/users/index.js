@@ -1,4 +1,3 @@
-import e from "express"
 import express from "express"
 import createHttpError from "http-errors"
 import UsersModel from "./model.js"
