@@ -18,4 +18,21 @@ const booksSchema = new Schema(
   { timestamps: true }
 )
 
+// ********************************************************* MONGOOSE CUSTOM METHOD **************************************************************
+
+booksSchema.static("findBooksWithAuthors", async function (query) {
+  const total = await this.countDocuments(query.criteria)
+
+  const books = await this.find(query.criteria, query.options.fields)
+    .skip(query.options.skip)
+    .limit(query.options.limit)
+    .sort(query.options.sort)
+    .populate({
+      path: "authors",
+      select: "firstName lastName",
+    })
+
+  return { total, books }
+})
+
 export default model("Book", booksSchema)

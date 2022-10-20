@@ -2,6 +2,7 @@ import express from "express"
 import createHttpError from "http-errors"
 import UsersModel from "./model.js"
 import BooksModel from "../books/model.js"
+import CartsModel from "./cartsModel.js"
 
 const usersRouter = express.Router()
 
@@ -219,5 +220,63 @@ usersRouter.delete(
     }
   }
 )
+
+usersRouter.post("/:userId/cart", async (req, res, next) => {
+  // The purpose of this endpoint is to add an item (and quantity to the Active cart of the specified user)
+  try {
+    // 0. We are going to receive bookId and quantity in req.body
+    const { bookId, quantity } = req.body
+
+    // 1. Does the user exist? If not --> 404
+    const user = await UsersModel.findById(req.params.userId)
+    if (!user)
+      return next(
+        createHttpError(404, `User with id ${req.params.userId} not found!`)
+      )
+
+    // 2. Does the book exist? If not --> 404
+    const purchasedBook = await BooksModel.findById(bookId)
+    if (!purchasedBook)
+      return next(createHttpError(404, `Book with id ${bookId} not found!`))
+
+    // 3. Is the book already in the ACTIVE cart of the specified user?
+    const isBookThere = await CartsModel.findOne({
+      owner: req.params.userId,
+      status: "Active",
+      "products.productId": bookId,
+    })
+
+    if (isBookThere) {
+      // 3.1 If the book is already there --> increase the quantity
+
+      /*
+      - find the index of the element in products array --> in Mongo we can use the POSITIONAL OPERATOR ($) which represents the index of the element of the array that matches the query
+      - products[index].quantity += quantity --> in Mongo products.$.quantity += quantity
+      - save it back      
+      */
+
+      const updatedCart = await CartsModel.findOneAndUpdate(
+        {
+          owner: req.params.userId,
+          status: "Active",
+          "products.productId": bookId,
+        }, // WHAT
+        { $inc: { "products.$.quantity": quantity } }, // HOW
+        { new: true, runValidators: true } // OPTIONS
+      )
+      res.send(updatedCart)
+    } else {
+      // 3.2 If it is not --> add it to the cart (if the cart exists)
+      const modifiedCart = await CartsModel.findOneAndUpdate(
+        { owner: req.params.userId, status: "Active" }, // WHAT
+        { $push: { products: { productId: bookId, quantity } } }, // HOW
+        { new: true, runValidators: true, upsert: true } // OPTIONS, upsert:true means if the active cart of that user is NOT found --> Mongo please create that automagically (also with the bookId and quantity in it)
+      )
+      res.send(modifiedCart)
+    }
+  } catch (error) {
+    next(error)
+  }
+})
 
 export default usersRouter

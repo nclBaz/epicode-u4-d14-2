@@ -8,19 +8,7 @@ booksRouter.get("/", async (req, res, next) => {
   try {
     const mongoQuery = q2m(req.query)
 
-    const total = await BooksModel.countDocuments(mongoQuery.criteria)
-
-    const books = await BooksModel.find(
-      mongoQuery.criteria,
-      mongoQuery.options.fields
-    )
-      .skip(mongoQuery.options.skip) // no matter the order of usage of these three methods, Mongo will always do SORT then SKIP then LIMIT
-      .limit(mongoQuery.options.limit)
-      .sort(mongoQuery.options.sort)
-      .populate({
-        path: "authors",
-        select: "firstName lastName",
-      })
+    const { total, books } = await BooksModel.findBooksWithAuthors(mongoQuery)
     res.send({
       links: mongoQuery.links("http://localhost:3001/books", total),
       total,
